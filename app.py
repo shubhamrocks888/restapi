@@ -1,49 +1,31 @@
-from flask  import Flask,jsonify,request
+from flask import Flask,request
+from flask_restful import Resource,Api
 
 app = Flask(__name__)
+api = Api(app)
 
-stores = [
-            {'name':'My wonderful store',
-             'items':[{'name':'My Item','price':15.99}]
-            }
-        ]
+items = []
 
-@app.route('/store',methods=['POST'])
-def create_store():
-    request_data = request.get_json()
-    new_store = {'name':request_data['name'],'items':[]}
-    stores.append(new_store)
-    return jsonify(new_store)
+class Item(Resource):
+    def get(self,name):
+        item = next(filter(lambda x:x['name']==name,items),None)
+        return {'item':item},200 if item else 404
 
-@app.route('/store/<string:name>')
-def get_store(name):
-    for store in stores:
-        if store['name']==name:
-            return jsonify(store)
-        else:
-            return jsonify({"message":"store does not exist"})
+    def post(self,name):
+        item = next(filter(lambda x: x['name'] == name, items), None)
+        if item:
+            return {"message":"item already exists"},400
+        data = request.get_json()
+        new_item = {'name':name,'price':data['price']}
+        items.append(new_item)
+        return new_item,201
 
-@app.route('/store')
-def get_stores():
-    return jsonify({"stores":stores})
+class ItemList(Resource):
+    def get(self):
+        return {"items":items}
 
-@app.route('/store/<string:name>/item',methods=['POST'])
-def create_item_in_store(name):
-    request_data = request.get_json()
-    for store in stores:
-        if store['name'] == name:
-            new_item = {'name': request_data['name'],'price':request_data['price']}
-            store['items'].append(new_item)
-            return jsonify(new_item)
-        return jsonify({"message": "store does not exist"})
+api.add_resource(Item,'/item/<string:name>')
+api.add_resource(ItemList,'/items/')
 
 
-@app.route('/store/<string:name>/item')
-def get_item_in_store(name):
-    for store in stores:
-        if store['name'] == name:
-            return jsonify({"items": store['items']})
-        else:
-            return jsonify({"message": "store does not exist"})
-
-app.run(port=5000)
+app.run(port=5000,debug=True)
