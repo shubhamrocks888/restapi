@@ -1,20 +1,27 @@
-from flask  import Flask,jsonify
+from flask  import Flask,jsonify,request
 
 app = Flask(__name__)
 
 stores = [
             {'name':'My wonderful store',
-             'items':[  {'name':'My Item','price':15.99}]
+             'items':[{'name':'My Item','price':15.99}]
             }
         ]
 
 @app.route('/store',methods=['POST'])
 def create_store():
-    pass
+    request_data = request.get_json()
+    new_store = {'name':request_data['name'],'items':[]}
+    stores.append(new_store)
+    return jsonify(new_store)
 
 @app.route('/store/<string:name>')
 def get_store(name):
-    pass
+    for store in stores:
+        if store['name']==name:
+            return jsonify(store)
+        else:
+            return jsonify({"message":"store does not exist"})
 
 @app.route('/store')
 def get_stores():
@@ -22,10 +29,21 @@ def get_stores():
 
 @app.route('/store/<string:name>/item',methods=['POST'])
 def create_item_in_store(name):
-    pass
+    request_data = request.get_json()
+    for store in stores:
+        if store['name'] == name:
+            new_item = {'name': request_data['name'],'price':request_data['price']}
+            store['items'].append(new_item)
+            return jsonify(new_item)
+        return jsonify({"message": "store does not exist"})
+
 
 @app.route('/store/<string:name>/item')
 def get_item_in_store(name):
-    pass
+    for store in stores:
+        if store['name'] == name:
+            return jsonify({"items": store['items']})
+        else:
+            return jsonify({"message": "store does not exist"})
 
 app.run(port=5000)
