@@ -1,7 +1,9 @@
-from flask import Flask,request
-from flask_restful import Resource,Api
-from flask_jwt import JWT,jwt_required
+from flask import Flask
+from flask_restful import Api
+from flask_jwt import JWT
 from security import authenticate,identity
+from user import UserRegister
+from item import Item,ItemList
 
 app = Flask(__name__)
 api = Api(app)
@@ -9,29 +11,9 @@ app.secret_key = "jose"
 
 jwt = JWT(app,authenticate,identity)
 
-items = []
-
-class Item(Resource):
-    @jwt_required()
-    def get(self,name):
-        item = next(filter(lambda x:x['name']==name,items),None)
-        return {'item':item},200 if item else 404
-
-    def post(self,name):
-        item = next(filter(lambda x: x['name'] == name, items), None)
-        if item:
-            return {"message":"item already exists"},400
-        data = request.get_json()
-        new_item = {'name':name,'price':data['price']}
-        items.append(new_item)
-        return new_item,201
-
-class ItemList(Resource):
-    def get(self):
-        return {"items":items}
-
 api.add_resource(Item,'/item/<string:name>')
 api.add_resource(ItemList,'/items/')
+api.add_resource(UserRegister,'/register')
 
-
-app.run(port=5000,debug=True)
+if __name__ == "__main__":
+    app.run(port=5000,debug=True)
